@@ -1,0 +1,15 @@
+{
+  "name": "Ma Playlist Pro",
+  "short_name": "MyMusic",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1db954",
+  "icons": [
+    {
+      "src": "Gemini_Generated_Image_6tvapp6tvapp6tva.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

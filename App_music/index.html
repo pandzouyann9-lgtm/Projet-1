@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rap play</title>
+   <link rel="icon" href="Gemini_Generated_Image_6tvapp6tvapp6tva.png">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --player-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --primary: #1db954; /* Cette couleur changera toute seule ! */
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-color); 
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            transition: all 0.5s ease; /* Transition douce pour le changement de couleur */
+        }
+
+        .player { 
+            background: var(--player-bg); 
+            padding: 30px; border-radius: 30px; width: 320px; text-align: center; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .cover-img { 
+            width: 200px; height: 200px; border-radius: 20px; object-fit: cover; 
+            margin-bottom: 20px; 
+            /* Effet de halo dynamique */
+            box-shadow: 0 10px 30px var(--primary); 
+            transition: box-shadow 0.8s ease;
+        }
+
+        .playing .cover-img { animation: rotateCover 12s linear infinite; }
+        @keyframes rotateCover { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        #progressRange { width: 100%; accent-color: var(--primary); cursor: pointer; }
+        
+        .controls button.ctrl-btn { background: #282828; color: white; border: none; padding: 12px; border-radius: 50%; cursor: pointer; }
+        #playBtn { background: var(--primary); padding: 20px; font-size: 1.5rem; transition: background 0.5s; }
+
+        .playlist { margin-top: 25px; background: var(--player-bg); border-radius: 15px; width: 320px; overflow: hidden; }
+        .track-item { padding: 15px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .track-item.active { border-left: 6px solid var(--primary); background: rgba(255, 255, 255, 0.05); color: var(--primary); }
+        h1{text-align: center;
+            margin-bottom: 26px;
+            color: rgb(85, 58, 58);
+
+        }
+        P{margin-bottom: 2rem;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <link rel="sw" href="sw.js">
+    <link rel="Service_worker" href="Service_worker.js">
+</head>
+<body>
+   <h1>RAP GAME PLAYLIST</h1>
+
+   <P> <strong> Monde des gros poisson</strong></P>
+    <div class="player" id="musicPlayer">
+        <img id="coverImage" class="cover-img" src="" alt="Pochette">
+        <h2 id="title">Titre</h2>
+        <p id="artist" style="opacity: 0.6;">Artiste</p>
+
+        <audio id="audioSource"></audio>
+
+        <div style="margin: 15px 0;">
+            <input type="range" id="progressRange" value="0">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-top: 5px;">
+                <span id="currentTime">0:00</span>
+                <span id="durationTime">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls" style="display: flex; justify-content: space-around; align-items: center;">
+            <button class="ctrl-btn" onclick="prev()">⏮</button>
+            <button class="ctrl-btn" onclick="togglePlay()" id="playBtn">▶</button>
+            <button class="ctrl-btn" onclick="next()">⏭</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 15px;">
+            <span style="font-size: 10px;">🔈</span>
+            <input type="range" id="volumeRange" min="0" max="1" step="0.1" value="0.8" style="accent-color: var(--primary); width: 80px;">
+            <span style="font-size: 10px;">🔊</span>
+        </div>
+    </div>
+
+    <div class="playlist" id="playlistDisplay"></div>
+
+    <script>
+       
+
+        const playlist = [
+
+
+           { title: "One Day",artist: "Scarf",src: "musique/Scarf_One Day.mp3", cover :"image/ChatGPT Image 3 janv. 2026, 23_42_06.png" , color: "#3a80b7" },
+            { title: "Saalzone", artist: "Lsyr_ft_Pablo_Scarf_& Cnb", src: "musique/Lsyr_ft_Pablo_Scarf_& Cnb_ Sal Zone.mp3", cover: "image/Gemini_Generated_Image_cx2yj5cx2yj5cx2y.png", color: "#e91e63" },
+            
+            { title: "Cartier", artist: "Spraga_ft_Scarf_& Nitho", src: "musique/Spraga binks_ft_Scarf_& Nitho_Cartier.mp3", cover: "image/ChatGPT Image 3 janv. 2026, 23_27_57.png", color: "#9c27b0" },
+
+             { title: "New Aera"
+             , artist: "Scarf_Genki_Dramaki&_Wakanda" , src: "musique/New_Aera.mp3" ,cover: "image/new aera.png", color : "#1db954", }
+
+    ]        
+
+
+        let currentTrack = 0;
+        const audio = document.getElementById('audioSource');
+        const playBtn = document.getElementById('playBtn');
+        const progressRange = document.getElementById('progressRange');
+        const volumeRange = document.getElementById('volumeRange');
+        const coverImage = document.getElementById('coverImage');
+        const musicPlayer = document.getElementById('musicPlayer');
+        const playlistDisplay = document.getElementById('playlistDisplay');
+
+        function loadTrack(index) {
+            const track = playlist[index];
+            
+ 
+
+            // --- MISE À JOUR DE LA COULEUR ---
+            document.documentElement.style.setProperty('--primary', track.color);
+            
+            document.getElementById('title').innerText = track.title;
+            document.getElementById('artist').innerText = track.artist;
+            audio.src = track.src;
+            coverImage.src = track.cover;
+            audio.load();
+            currentTrack = index;
+            updatePlaylistUI();
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                playBtn.innerText = "⏸";
+                musicPlayer.classList.add('playing');
+            } else {
+                audio.pause();
+                playBtn.innerText = "▶";
+                musicPlayer.classList.remove('playing');
+            }
+        }
+
+        audio.ontimeupdate = () => {
+            if (audio.duration) {
+                progressRange.value = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('currentTime').innerText = formatTime(audio.currentTime);
+                document.getElementById('durationTime').innerText = formatTime(audio.duration);
+            }
+        };
+
+        progressRange.oninput = () => { audio.currentTime = (progressRange.value * audio.duration) / 100; };
+        volumeRange.oninput = () => { audio.volume = volumeRange.value; };
+        audio.onended = () => next();
+
+        function next() {
+            currentTrack = (currentTrack + 1) % playlist.length;
+            loadTrack(currentTrack);
+            audio.play();
+            playBtn.innerText = "⏸";
+            musicPlayer.classList.add('playing');
+        }
+
+        function prev() {
+            currentTrack = (currentTrack - 1 + playlist.length) % playlist.length;
+            loadTrack(currentTrack);
+            audio.play();
+            playBtn.innerText = "⏸";
+            musicPlayer.classList.add('playing');
+        }
+
+        function formatTime(s) {
+            let m = Math.floor(s / 60);
+            let sec = Math.floor(s % 60);
+            return m + ":" + (sec < 10 ? "0" + sec : sec);
+        }
+
+        function updatePlaylistUI() {
+            playlistDisplay.innerHTML = "";
+            playlist.forEach((track, index) => {
+                let div = document.createElement('div');
+                div.className = "track-item" + (index === currentTrack ? " active" : "");
+                div.innerText = (index + 1) + ". " + track.title;
+                div.onclick = () => { loadTrack(index); audio.play(); playBtn.innerText = "⏸"; musicPlayer.classList.add('playing'); };
+                playlistDisplay.appendChild(div);
+            });
+        }
+
+        loadTrack(0);
+    </script>
+</body>
+</html>
